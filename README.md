@@ -5,8 +5,8 @@
 4. pyenv 로 원하는 파이썬 버전 설치및 액티브 버전으로 지정  
    ```pyenv install 3.11.9  #설치```  
    ```pyenv local 3.11.9  #지정```
-6. ```poetry env use 3.11.9  #중요:프로젝트홈에서``` 로 poetry 가 이용할 버전을 지정합니다.
-7. ```poetry shell  #중요:프로젝트홈에서``` 을 실행하여 가상환경을 실행합니다.
+6. ```(중요:프로젝트홈에서) poetry env use 3.11.9``` 로 poetry 가 이용할 버전을 지정합니다.
+7. ```(중요:프로젝트홈에서) poetry shell  #중요:프로젝트홈에서``` 을 실행하여 가상환경을 실행합니다.
 8. ```poetry install``` 을 실행합니다.
 9. ```uvicorn app.main:start``` 를 실행합니다. (그리고 http://localhost:8000 접속)
 
