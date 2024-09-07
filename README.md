@@ -6,7 +6,7 @@
    ```pyenv install 3.11.9  #설치```  
    ```pyenv local 3.11.9  #지정```
 6. ```(중요:프로젝트홈에서) poetry env use 3.11.9``` 로 poetry 가 이용할 버전을 지정합니다.
-7. ```(중요:프로젝트홈에서) poetry shell  #중요:프로젝트홈에서``` 을 실행하여 가상환경을 실행합니다.
+7. ```(중요:프로젝트홈에서) poetry shell``` 을 실행하여 가상환경을 실행합니다.
 8. ```poetry install``` 을 실행합니다.
 9. ```uvicorn app.main:start``` 를 실행합니다. (그리고 http://localhost:8000 접속)
 
