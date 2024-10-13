@@ -28,11 +28,11 @@ def get_current_price(stock_no):
     # 응답을 JSON으로 변환
     data = res.json()
     json_str = json.loads(json.dumps(data))
-    print(json_str["output"]["stck_prpr"])
+    #print(json_str["output"]["stck_prpr"])
 
     # JSON 데이터를 pretty하게 출력
     pretty_json = json.dumps(data, indent=4, ensure_ascii=False)
-    print(pretty_json)
+    #print(pretty_json)
 
     if res.status_code == 200 and res.json()["rt_cd"] == "0" :
         return(res.json())
@@ -43,5 +43,5 @@ def get_current_price(stock_no):
         print("Error Code : " + str(res.status_code) + " | " + res.text)
         return None
 
-get_current_price("005930")
+#get_current_price("005930")
 
