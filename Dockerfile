@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.11 as python-base
 
 WORKDIR /finance-batch
 
@@ -8,4 +8,4 @@ COPY . .
 
 RUN poetry install --no-root
 
-CMD [ "poetry", "run", "python", "main.py", ${period} ]
+CMD [ "poetry", "run", "python3", "main.py", ${period} ]
