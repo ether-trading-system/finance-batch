@@ -8,4 +8,4 @@ COPY . .
 
 RUN poetry install --no-root
 
-CMD [ "poetry", "run", "python3", "main.py", ${period} ]
+ENTRYPOINT [ "poetry", "run", "python3", "main.py", ${period} ]
