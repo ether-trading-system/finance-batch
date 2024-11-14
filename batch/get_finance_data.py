@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup as bs
 from bs4.element import ResultSet
 from batch.finance_db import FinanceDB
 
+
+# 추후 ticker로 함께 관리
 tickers = {
     "005930": "삼성전자",
     "000660": "SK하이닉스",
@@ -14,40 +16,38 @@ tickers = {
     "055550": "신한지주",
 }
 
-# 원하는 항목 목록 정의 (수집할 재무 데이터의 항목명 리스트)
-desired_columns = [
-    "매출액",
-    "영업이익",
-    "영업이익(발표기준)",
-    "당기순이익",
-    "지배주주순이익",
-    "비지배주주순이익",
-    "자산총계",
-    "부채총계",
-    "자본총계",
-    "지배주주지분",
-    "비지배주주지분",
-    "자본금",
-    "부채비율",
-    "유보율",
-    "영업이익률",
-    "지배주주순이익률",
-    "ROA",
-    "ROE",
-    "EPS",
-    "BPS",
-    "DPS",
-    "PER",
-    "PBR",
-    "발행주식수",
-    "배당수익률",
-]
-
 
 class GetFinanceData(FinanceDB):
     def __init__(self, term: str = "year") -> None:
         super().__init__()
         self.term = term
+        self.desired_columns = [
+            "매출액",
+            "영업이익",
+            "영업이익(발표기준)",
+            "당기순이익",
+            "지배주주순이익",
+            "비지배주주순이익",
+            "자산총계",
+            "부채총계",
+            "자본총계",
+            "지배주주지분",
+            "비지배주주지분",
+            "자본금",
+            "부채비율",
+            "유보율",
+            "영업이익률",
+            "지배주주순이익률",
+            "ROA",
+            "ROE",
+            "EPS",
+            "BPS",
+            "DPS",
+            "PER",
+            "PBR",
+            "발행주식수",
+            "배당수익률",
+        ]
 
     def htmlParser(self, code: str) -> tuple[ResultSet, ResultSet]:
         url = requests.get(
@@ -94,7 +94,7 @@ class GetFinanceData(FinanceDB):
                     temp = None
                 value_list.append(temp)
 
-            if category in desired_columns:
+            if category in self.desired_columns:
                 data[category] = value_list
 
         year_list = []
@@ -122,7 +122,7 @@ class GetFinanceData(FinanceDB):
         Table = Table.reset_index()
         Table = Table[
             ["연도", "종목코드", "종목명"]
-            + [col for col in desired_columns if col in Table.columns]
+            + [col for col in self.desired_columns if col in Table.columns]
         ]
         return Table
 
