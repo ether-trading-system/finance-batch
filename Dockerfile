@@ -1,11 +1,13 @@
-FROM python:3.11 as python-base
-
-WORKDIR /finance-batch
+FROM python:3.11 as builder
 
 RUN pip install poetry
+
+WORKDIR /finance-batch
 
 COPY . .
 
 RUN poetry install --no-root
 
-CMD [ "poetry", "run", "python3", "main.py", ${period} ]
+RUN poetry shell
+
+CMD ["poetry", "run", "python", "main.py", "year"]
