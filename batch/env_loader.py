@@ -10,6 +10,7 @@ class EnvLoader:
         self.DBPASS = os.getenv("DBPASS")
         self.DBHOST = os.getenv("DBHOST")
         self.DBPORT = os.getenv("DBPORT")
+        self.QUERY = os.getenv("QUERY")
 
     def getDBNAME(self) -> str:
         return self.DBNAME
@@ -25,6 +26,9 @@ class EnvLoader:
 
     def getDBPORT(self) -> int:
         return int(self.DBPORT)
+
+    def getQUERY(self) -> int:
+        return self.QUERY
 
     def getDBConnectionProperties(self) -> dict:
         return {
