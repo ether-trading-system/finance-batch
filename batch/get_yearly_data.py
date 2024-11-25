@@ -84,9 +84,16 @@ def get_fnguide_table(tickers):
         Table = Table.reset_index()  # 인덱스 리셋
         Table = Table[['연도', '종목코드', '종목명'] + [col for col in desired_columns if col in Table.columns]]  # 열 순서 재정렬
 
-        all_data.append(Table)  # 모든 데이터 리스트에 추가
+        # 빈 데이터프레임이나 모든 값이 NaN인 경우 제외
+        if not Table.empty and not Table.isna().all().all():
+            all_data.append(Table)  # 유효한 데이터프레임만 추가
 
-    final_df = pd.concat(all_data, ignore_index=True)  # 모든 데이터프레임을 하나로 병합
+    # 병합 수행
+    if all_data:  # all_data가 비어 있지 않다면 병합
+        final_df = pd.concat(all_data, ignore_index=True)
+    else:  # 비어 있다면 빈 데이터프레임 반환
+        final_df = pd.DataFrame()
+
     return final_df  # 최종 데이터프레임 반환
 
 # 데이터프레임을 PostgreSQL 테이블에 삽입하는 함수 정의
