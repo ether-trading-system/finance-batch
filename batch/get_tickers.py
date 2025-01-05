@@ -42,10 +42,15 @@ otp_stk = rq.post(gen_otp_url, gen_otp_stk, headers=headers).text  # OTP 생성 
 print(otp_stk)  # 생성된 OTP 출력
 
 # 생성된 OTP로 코스피 데이터를 다운로드
-down_url = 'http://data.krx.co.kr/comm/fileDn/download_csv/download.cmd'
+# [12025] 업종분류 현황  -> 코스피,코스닥 종가정보
+# [12021] PER/PBR/배당수익률(개별종목) -> 개별종목 기본정보 PER,EPS 등
+down_url = 'http://data.krx.co.kr/comm/fileDn/download_csv/download.cmd'  #http://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201020506    
 down_sector_stk = rq.post(down_url, {'code': otp_stk}, headers=headers)
 
 sector_stk = pd.read_csv(BytesIO(down_sector_stk.content), encoding='EUC-KR')  # 데이터 읽기
+print('--------------------------------------------')
+print(sector_stk[sector_stk['종목명'] == '신라섬유'])
+print('--------------------------------------------')
 
 # 코스닥 데이터 수집 시작
 gen_otp_url = 'http://data.krx.co.kr/comm/fileDn/GenerateOTP/generate.cmd'
@@ -63,6 +68,9 @@ down_sector_ksq = rq.post(down_url, {'code': otp_ksq}, headers=headers)  # 데�
 
 sector_ksq = pd.read_csv(BytesIO(down_sector_ksq.content), encoding='EUC-KR')  # 데이터 읽기
 print(sector_ksq)  # 코스닥 데이터 출력
+print("============================================")
+print(sector_ksq[sector_ksq['종목명'] == '신라섬유'])
+print('--------------------------------------------')
 
 # 코스피와 코스닥 데이터를 하나의 DataFrame으로 결합
 krx_sector = pd.concat([sector_stk, sector_ksq]).reset_index(drop=True)
@@ -81,24 +89,61 @@ gen_otp_data = {  # 개별 종목 데이터를 요청하기 위한 매개변수
 }
 
 otp_data = rq.post(gen_otp_url, gen_otp_data, headers=headers).text  # OTP 생성
-krx_ind = rq.post(down_url, {'code': otp_data}, headers=headers)  # 데이터 다운로드
+krx_ind = rq.post(down_url, {'code': otp_data}, headers=headers)  # 데이터 다운로드  [12021] PER/PBR/배당수익률(개별종목)
 
 krx_ind = pd.read_csv(BytesIO(krx_ind.content), encoding='EUC-KR')  # 데이터 읽기
-krx_sector['종목명'] = krx_sector['종목명'].str.strip()  # 종목명 공백 제거
-krx_sector['기준일'] = biz_day  # 기준일 추가
+krx_ind['종목명'] = krx_ind['종목명'].str.strip()  # 종목명 공백 제거
+krx_ind['기준일'] = biz_day  # 기준일 추가
+
+print("********************************************")
+print(krx_ind[krx_ind['종목명'] == '신라섬유'])
+print("********************************************")
 
 # 데이터 비교 및 병합
 set(krx_sector['종목명']).symmetric_difference(set(krx_ind['종목명']))  # 종목명 차집합 구하기
 
 kor_ticker = pd.merge(krx_sector,
                       krx_ind,
-                      on=krx_sector.columns.intersection(krx_ind.columns).tolist(),
-                      how='outer')  # 두 데이터를 병합
+                      #on=krx_sector.columns.intersection(krx_ind.columns).tolist(),
+                      on=['종목명'],
+                      how='outer',
+                      suffixes=('_x','_y')
+                      )  # 두 데이터를 병합
 
 print("KRX Sector DataFrame:")
 print(krx_sector.head())
 print("Kor Ticker DataFrame:")
 print(kor_ticker.head())
+
+# '시장구분' 컬럼 채우기 (접미어가 추가된 경우만 실행)
+if '시장구분_x' in kor_ticker.columns and '시장구분_y' in kor_ticker.columns:
+    kor_ticker['시장구분'] = kor_ticker['시장구분_x'].combine_first(kor_ticker['시장구분_y'])
+    kor_ticker.drop(['시장구분_x', '시장구분_y'], axis=1, inplace=True)
+
+# '종목명' 컬럼 채우기 (접미어가 추가된 경우만 실행)
+if '종목명_x' in kor_ticker.columns and '종목명_y' in kor_ticker.columns:
+    kor_ticker['종목명'] = kor_ticker['종목명_x'].combine_first(kor_ticker['종목명_y'])
+    kor_ticker.drop(['종목명_x', '종목명_y'], axis=1, inplace=True)
+
+# '종목코드' 컬럼 채우기 (접미어가 추가된 경우만 실행)
+if '종목코드_x' in kor_ticker.columns and '종목코드_y' in kor_ticker.columns:
+    kor_ticker['종목코드'] = kor_ticker['종목코드_x'].combine_first(kor_ticker['종목코드_y'])
+    kor_ticker.drop(['종목코드_x', '종목코드_y'], axis=1, inplace=True)
+
+# '종가' 컬럼 채우기 (접미어가 추가된 경우만 실행)
+if '종가_x' in kor_ticker.columns and '종가_y' in kor_ticker.columns:
+    kor_ticker['종가'] = kor_ticker['종가_x'].combine_first(kor_ticker['종가_y'])
+    kor_ticker.drop(['종가_x', '종가_y'], axis=1, inplace=True)
+
+# '등락률' 컬럼 채우기 (접미어가 추가된 경우만 실행)
+if '등락률_x' in kor_ticker.columns and '등락률_y' in kor_ticker.columns:
+    kor_ticker['등락률'] = kor_ticker['등락률_x'].combine_first(kor_ticker['등락률_y'])
+    kor_ticker.drop(['등락률_x', '등락률_y'], axis=1, inplace=True)
+
+# '기준일' 컬럼 채우기 (접미어가 추가된 경우만 실행)
+if '기준일_x' in kor_ticker.columns and '기준일_y' in kor_ticker.columns:
+    kor_ticker['기준일'] = kor_ticker['기준일_x'].combine_first(kor_ticker['기준일_y'])
+    kor_ticker.drop(['기준일_x', '기준일_y'], axis=1, inplace=True)
 
 # 조건별 종목 구분 추가 (스팩, 우선주, 리츠 등)
 import numpy as np  # 수치 계산 라이브러리 가져오기
@@ -108,7 +153,7 @@ diff = list(set(krx_sector['종목명']).symmetric_difference(set(krx_ind['종�
 kor_ticker['종목구분'] = np.where(kor_ticker['종목명'].str.contains('스팩|제[0-9]+호'), '스팩',
                               np.where(kor_ticker['종목코드'].str[-1:] != '0', '우선주',
                                        np.where(kor_ticker['종목명'].str.endswith('리츠'), '리츠',
-                                                np.where(kor_ticker['종목명'].isin(diff), '기타',
+                                                np.where(kor_ticker['종목명'].isin(diff), '보통주',
                                                          '보통주'))))
 
 # 최종 데이터 정리
@@ -118,6 +163,8 @@ kor_ticker = kor_ticker[['종목코드', '종목명', '시장구분', '종가', 
 kor_ticker = kor_ticker.replace({np.nan: None})  # NaN 값을 None으로 대체
 
 print(kor_ticker[kor_ticker['종목명'] == '유비쿼스 [락]'])
+print(kor_ticker[kor_ticker['종목명'] == '삼성전자'])
+print(kor_ticker[kor_ticker['종목명'] == '신라섬유'])
 
 kor_ticker = kor_ticker[kor_ticker['종목명'] != '유비쿼스 [락]']
 

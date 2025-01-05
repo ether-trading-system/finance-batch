@@ -34,5 +34,16 @@ print(f"Total tickers: {len(tickers)}")
 mycursor.close()
 conn.close()
 
-from batch.get_yearly_data import get_fnguide_table
-get_fnguide_table(tickers)
+#from temp.get_yearly_data import get_fnguide_table
+#get_fnguide_table(tickers)
+
+#term="year"
+term="quarter"
+from batch.get_finance_data import GetFinanceData
+FinanceBatch = GetFinanceData(term=term)
+#tickers = {
+#    "005930": "삼성전자",  # 005930: 삼성전자 티커
+#    "088980": "맥쿼리인프라"    # 066570: LG전자 티커
+#}
+data = FinanceBatch.getFinanceData(tickers)
+FinanceBatch.insertDB(df=data, term=term)

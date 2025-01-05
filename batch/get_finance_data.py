@@ -50,31 +50,62 @@ class GetFinanceData(FinanceDB):
         ]
 
     def htmlParser(self, code: str) -> tuple[ResultSet, ResultSet]:
-        url = requests.get(
-            f"http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A{code}"
-        )
-        parsed_html_table = (
-            bs(url.content, "html.parser")
-            .find("div", {"class": "fng_body asp_body"})
-            .find("div", {"id": "div15"})
-            .find(
-                "div",
-                {"id": "highlight_D_Y" if self.term == "year" else "highlight_D_Q"},
-            )
-        )
-        parsed_html_tbody_tr = parsed_html_table.find("tbody").find_all("tr")
-        parsed_html_thead_tr = (
-            parsed_html_table.find("thead")
-            .find("tr", {"class": "td_gapcolor2"})
-            .find_all("th")
-        )
+        try:
+            # URL 요청
+            url = f"http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A{code}"
+            response = requests.get(url)
 
-        return parsed_html_tbody_tr, parsed_html_thead_tr
+            # HTTP 응답 상태 체크
+            if response.status_code != 200:
+                raise Exception(f"HTTP 요청 실패: {response.status_code}")
+
+            # HTML 파싱
+            soup = bs(response.content, "html.parser")
+
+            # 재무정보 부분 탐색
+            third_div = (
+                soup.find("div", {"class": "fng_body asp_body"})
+                .find("div", {"id": "div15"})
+                .find(
+                    "div",
+                    {"id": "highlight_D_Y" if self.term == "year" else "highlight_D_Q"},
+                )
+            )
+
+            # 재무정보가 없는 경우 처리
+            if third_div is None:
+                print(f"종목 {code}: 재무정보가 제공되지 않습니다.")
+                return None, None
+
+            # tbody와 thead 정보 추출
+            parsed_html_tbody_tr = third_div.find("tbody").find_all("tr")
+            parsed_html_thead_tr = (
+                third_div.find("thead")
+                .find("tr", {"class": "td_gapcolor2"})
+                .find_all("th")
+            )
+
+            return parsed_html_tbody_tr, parsed_html_thead_tr
+
+        except Exception as e:
+            # 예외 발생 시 로그 출력 및 빈 데이터 반환
+            print(f"Error processing {code}: {str(e)}")
+            return None, None
 
     def getDataFromParsedHtml(
         self, parsed_html: tuple[ResultSet, ResultSet]
     ) -> tuple[dict, list]:
+        
+        if parsed_html is None:
+            print("Error: 파싱된 HTML 데이터가 없습니다.")
+            return []
+        
         tbody_tr, thead_tr = parsed_html
+
+        # tbody_tr 검증
+        if tbody_tr is None or thead_tr is None:
+            print("Error: tbody 또는 thead 데이터가 없습니다.")
+            return [] 
 
         data = {}
 
@@ -126,12 +157,18 @@ class GetFinanceData(FinanceDB):
         ]
         return Table
 
-    def getFinanceData(self):
+    def getFinanceData(self, tickers):
         datas = []
 
         for code, name in tickers.items():
             parsed_html = self.htmlParser(code=code)
             data = self.getDataFromParsedHtml(parsed_html=parsed_html)
+
+            if not data:  # data가 None 또는 빈 리스트인 경우
+                print(f"종목 {code}의 재무정보가 없습니다. 빈 데이터프레임 생성.")
+                datas.append(pd.DataFrame())  # 빈 데이터프레임 추가
+                continue  # 다음 종목으로 넘어감
+            
             df = self.makeDataFrame(datas=data, code=code, name=name)
             datas.append(df)
 
